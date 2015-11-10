@@ -62,9 +62,9 @@ if __name__ == "__main__":
 
     cap = cv2.VideoCapture(opts.video)
 
-    cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
-    cap.set(cv2.cv.CV_CAP_PROP_FPS, 30)
+    # cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
+    # cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
+    # cap.set(cv2.cv.CV_CAP_PROP_FPS, 30)
 
     boundaries = [
     ([10, 10, 140], [150, 150, 255])
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         ret, frame = cap.read()
         h,w,_ = frame.shape
-        h=int((1-0.65)*h)
+        # h=int((1-0.65)*h)
         frame = frame[h:,:,:]
         
         
