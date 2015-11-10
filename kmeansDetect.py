@@ -18,7 +18,7 @@ def bestCluster(cluster, distCluster):
             if np.var(group) < var:
                 var = np.var(group)
                 id = i
-    print var,stats.normaltest([distCluster[id]],None)
+    #print var,stats.normaltest([distCluster[id]],None)
     return var,id
 
 def saturate(num,min,max):
@@ -83,6 +83,7 @@ if __name__ == "__main__":
         h,w,_ = frame.shape
         h=int((1-0.65)*h)
         frame = frame[h:,:,:]
+	frame = cv2.bilateralFilter(frame,5,75,75)
         
         
         orb = cv2.ORB(int(nfeatures),scaleFactor)
@@ -100,9 +101,9 @@ if __name__ == "__main__":
 
         try:
             if oldCenteroids==None:
-                centers, distort = vq.kmeans(kpoints, nclusters, iter=5)
+                centers, distort = vq.kmeans(kpoints, nclusters, iter=10)
             else:
-                centers, distort = vq.kmeans(kpoints, oldCenteroids, iter=5)
+                centers, distort = vq.kmeans(kpoints, oldCenteroids)
         except:
             centers = oldcenters
             kpoints = oldkpoints
@@ -135,7 +136,7 @@ if __name__ == "__main__":
         if M['m00'] != 0:
             cx = int(M['m10']/M['m00'])
             cy = int(M['m01']/M['m00'])
-            if var > 500:
+            if var < 1000:
                 cv2.drawContours(newFrame, [hull], 0, (255, 0 , 255), 2)
                 cv2.circle(newFrame, (cx, cy), 3, (255,0,0), 2)
             if distance.euclidean(np.array([cx,cy]), centers[id]) > 0.1*distThresh:

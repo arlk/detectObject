@@ -23,7 +23,7 @@ then
 		export LD_LIBRARY_PATH=.
 		sudo modprobe uvcvideo
 		v4l2-ctl -c focus_auto=0
-		./detect.py
+		./kmeansDetect.py
 	else
 		usage
 		exit 0
@@ -33,6 +33,6 @@ else
 	export LD_LIBRARY_PATH=.
 	sudo modprobe uvcvideo
 	v4l2-ctl -c focus_auto=0
-	./detect.py
+	./kmeansDetect.py
 	sudo service lightdm start
 fi
