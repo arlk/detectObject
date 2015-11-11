@@ -24,6 +24,7 @@ from __future__ import print_function
 import rospy
 from std_msgs.msg import Int32
 import numpy as np
+import math
 import cv2
 import video
 from common import anorm2, draw_str
@@ -49,10 +50,16 @@ class App:
     def __init__(self, video_src):
         self.track_len = 10
         self.detect_interval = 1 
+        self.h = 0
         self.tracks = []
         self.obstacle = []
         self.cam = video.create_capture(video_src)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 30)
         self.frame_idx = 0
+        self.notDetected = 0
+        self.globalMinDist = 300 
         self.prevCluster = []
         self.orb = cv2.ORB(**ORB_params)
         rospy.init_node('odroid', anonymous=True)
@@ -63,36 +70,59 @@ class App:
 
     def findBestCluster(self, clusters):
         id = 0 
-        minScore = np.inf
+        minScore = 2 
+        DONE = False
+        minDistance = self.globalMinDist
+        mindiffScore = np.inf 
+        prevAvg = np.average(self.prevCluster, axis=0) 
         for i,clust in enumerate(clusters):
             if len(clust)>=8:
-                score = stats.skewtest(clust)[0]
-                diffScore = (score[0]-score[1])**2
-                score = np.linalg.norm(score)
+                score = np.linalg.norm(stats.skewtest(clust)[0])
+                var = np.var(clust, axis=0)
+                avg = np.average(clust, axis=0)
+                dist = np.linalg.norm(prevAvg - avg)
+                if np.isnan(dist):
+                    dist = 0 
+                diffScore = math.fabs(var[0] - var[1])
+                print("hello")
                 if score < minScore:
-                    if score < 1 and diffScore<0.2:
-                        print(diffScore)
+                    print(score, diffScore, avg[1])
+                    if diffScore<mindiffScore and avg[1]>self.h/2 and dist<minDistance:
+                        DONE = True
                         minScore = score
+                        mindiffScore = diffScore
+                        minDistance = dist
                         id = i
-        if minScore == np.inf:
-            return self.prevCluster
+        if DONE == False:
+            self.globalMinDist += 100
+            self.notDetected += 1
+            #return self.prevCluster
+            return []
         else:
+            self.globalMinDist -= 50
+            if self.globalMinDist < 10:
+                self.globalMinDist = 10
+            self.notDetected = 0
+            print("FINAL:", mindiffScore, minScore, minDistance)
             self.prevCluster = clusters[id]
             return clusters[id]
 
     def findObstacle(self, points):
         Z = hierarchy.linkage(points, method='ward')
-        code = hierarchy.fcluster(Z, nclusters, criterion='maxclust')
-        cluster = [] 
-        for i in range(nclusters):
-            cluster.append(points[code==i])
-        bestCluster = self.findBestCluster(cluster)
+        if len(Z) > 0:
+            code = hierarchy.fcluster(Z, nclusters, criterion='maxclust')
+            cluster = [] 
+            for i in range(nclusters):
+                cluster.append(points[code==i])
+            bestCluster = self.findBestCluster(cluster)
+        else:
+            bestCluster = []
         return bestCluster 
 
     def run(self):
         while True:
             ret, frame = self.cam.read()
-            h,w,_ = frame.shape
+            self.h,w,_ = frame.shape
             #h = int((1-0.65)*h)
             #frame = frame[h:,:,:]
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -113,6 +143,7 @@ class App:
                     new_tracks = []
                     for tr, (x, y), good_flag in zip(self.tracks, p1.reshape(-1, 2), good):
                         if not good_flag:
+                            print ("OH NO!")
                             continue
                         tr.append((x, y))
                         if len(tr) > self.track_len:
@@ -120,13 +151,13 @@ class App:
                         new_tracks.append(tr)
                         cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
                     self.tracks = new_tracks
-                cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
-                cv2.circle(vis, (cx, cy), 3, (255,0,0), 2)
-                try:
-                    self.sendCoord(cx)
-                except rospy.ROSInterruptException:
-                    pass
-                draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
+                    cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
+                    cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
+                    try:
+                        self.sendCoord(cx)
+                    except rospy.ROSInterruptException:
+                        pass
+                    draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
 
             if self.frame_idx % self.detect_interval == 0:
                 mask = np.zeros_like(frame_gray)
@@ -134,14 +165,20 @@ class App:
                 for x, y in [np.int32(tr[-1]) for tr in self.tracks]:
                     cv2.circle(mask, (x, y), 5, 0, -1)
                 p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
+                # print(len(p))
                 #p = self.orb.detect(frame_gray, mask=mask)
                 #p = [kp.pt for kp in p]
+                print("reaching")
                 if p is not None:
                     p = np.float32(p).reshape(-1,2)
                     #p = self.findObstacle(p)
-                    if p is not None: 
+                    if p is not None:
+                        if self.notDetected > 20:
+                            self.tracks = []
                         for x, y in p:
+                            print("adding")
                             self.tracks.append([(x, y)])
+                        print(len(self.tracks))
                         # trackPnts = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
                         # newPnts = self.findObstacle(trackPnts)
                         # print(newPnts)
