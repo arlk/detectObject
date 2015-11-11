@@ -159,6 +159,13 @@ class App:
                         pass
                     draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
 
+            if self.notDetected > 0:
+                try:
+                    self.sendCoord(-1)
+                except rospy.ROSInterruptException:
+                    pass
+
+                
             if self.frame_idx % self.detect_interval == 0:
                 mask = np.zeros_like(frame_gray)
                 mask[:] = 255
