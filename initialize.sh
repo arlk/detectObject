@@ -33,6 +33,6 @@ else
 	export LD_LIBRARY_PATH=.
 	sudo modprobe uvcvideo
 	v4l2-ctl -c focus_auto=0
-	./kmeansDetect.py
+	./lk_detect.py
 	sudo service lightdm start
 fi
