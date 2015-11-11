@@ -66,9 +66,12 @@ class App:
         minScore = np.inf
         for i,clust in enumerate(clusters):
             if len(clust)>=8:
-                score = np.linalg.norm(stats.skewtest(clust)[0])
+                score = stats.skewtest(clust)[0]
+                diffScore = (score[0]-score[1])**2
+                score = np.linalg.norm(score)
                 if score < minScore:
-                    if score < 1:
+                    if score < 1 and diffScore<0.2:
+                        print(diffScore)
                         minScore = score
                         id = i
         if minScore == np.inf:
@@ -99,7 +102,7 @@ class App:
                 img0, img1 = self.prev_gray, frame_gray
                 p0 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
                 p0 = self.findObstacle(p0)
-                if p0.size > 0:
+                if len(p0) > 0:
                     self.tracks = [[(x,y)] for x,y in p0]
                     cx,cy = np.average(p0, axis=0).astype(int)
                     p0 = p0.reshape(-1,1,2)
