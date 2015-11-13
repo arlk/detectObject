@@ -66,14 +66,16 @@ class App:
                     dist = 0 
                 diffScore = math.fabs(var[0] - var[1])
                 print("hello")
-                if score < minScore:
+                if diffScore < mindiffScore:
                     print(score, diffScore, avg[1])
-                    if diffScore<mindiffScore and avg[1]>self.h/2 and dist<minDistance:
+                    if score<minScore and avg[1]>self.h/2 and dist<minDistance:
                         DONE = True
                         minScore = score
                         mindiffScore = diffScore
                         minDistance = dist
                         id = i
+                        break
+
         if DONE == False:
             print("NOT DETECTED")
             self.globalMinDist += 10
