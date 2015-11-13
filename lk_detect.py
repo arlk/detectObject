@@ -1,26 +1,4 @@
 #!/usr/bin/env python
-
-'''
-Lucas-Kanade tracker
-====================
-
-Lucas-Kanade sparse optical flow demo. Uses goodFeaturesToTrack
-for track initialization and back-tracking for match verification
-between frames.
-
-Usage
------
-lk_track.py [<video_source>]
-
-
-Keys
-----
-ESC - exit
-'''
-
-# Python 2/3 compatibility
-from __future__ import print_function
-
 import rospy
 from std_msgs.msg import Int32
 import numpy as np
@@ -32,7 +10,7 @@ from time import clock
 from scipy.cluster import hierarchy
 from scipy import stats
 
-lk_params = dict( winSize  = (15, 15),
+lk_params = dict( winSize  = (20, 20),
                   maxLevel = 2,
                   criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
@@ -49,7 +27,7 @@ ORB_params = dict( nfeatures = 500,
 class App:
     def __init__(self, video_src):
         self.track_len = 10
-        self.detect_interval = 1 
+        self.detect_interval = 5 
         self.h = 0
         self.tracks = []
         self.obstacle = []
@@ -61,7 +39,8 @@ class App:
         self.notDetected = 0
         self.globalMinDist = 300 
         self.prevCluster = []
-        self.orb = cv2.ORB(**ORB_params)
+        #self.orb = cv2.ORB(**ORB_params)
+        self.fast = cv2.FastFeatureDetector()
         rospy.init_node('odroid', anonymous=True)
         self.xcoordPub = rospy.Publisher('camera_x', Int32, queue_size=10)
     
@@ -70,12 +49,14 @@ class App:
 
     def findBestCluster(self, clusters):
         id = 0 
-        minScore = 2 
+        minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
         mindiffScore = np.inf 
         prevAvg = np.average(self.prevCluster, axis=0) 
+        print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
+            print len(clust)
             if len(clust)>=8:
                 score = np.linalg.norm(stats.skewtest(clust)[0])
                 var = np.var(clust, axis=0)
@@ -94,25 +75,28 @@ class App:
                         minDistance = dist
                         id = i
         if DONE == False:
-            self.globalMinDist += 100
+            print("NOT DETECTED")
+            self.globalMinDist += 10
             self.notDetected += 1
             #return self.prevCluster
             return []
         else:
             self.globalMinDist -= 50
-            if self.globalMinDist < 10:
-                self.globalMinDist = 10
+            if self.globalMinDist < 25:
+                self.globalMinDist =25 
             self.notDetected = 0
             print("FINAL:", mindiffScore, minScore, minDistance)
             self.prevCluster = clusters[id]
             return clusters[id]
 
     def findObstacle(self, points):
+        global nclusters
         Z = hierarchy.linkage(points, method='ward')
         if len(Z) > 0:
-            code = hierarchy.fcluster(Z, nclusters, criterion='maxclust')
+            code = hierarchy.fcluster(Z, 1000, criterion = 'distance')#nclusters, criterion='maxclust')
+            nclusters = np.max(code)
             cluster = [] 
-            for i in range(nclusters):
+            for i in range(1,nclusters+1):
                 cluster.append(points[code==i])
             bestCluster = self.findBestCluster(cluster)
         else:
@@ -131,10 +115,9 @@ class App:
             if len(self.tracks) > 0:
                 img0, img1 = self.prev_gray, frame_gray
                 p0 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
-                p0 = self.findObstacle(p0)
+                #p0 = self.findObstacle(p0)
                 if len(p0) > 0:
                     self.tracks = [[(x,y)] for x,y in p0]
-                    cx,cy = np.average(p0, axis=0).astype(int)
                     p0 = p0.reshape(-1,1,2)
                     p1, st, err = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
                     p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
@@ -151,12 +134,18 @@ class App:
                         new_tracks.append(tr)
                         cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
                     self.tracks = new_tracks
-                    cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
-                    cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
-                    try:
-                        self.sendCoord(cx)
-                    except rospy.ROSInterruptException:
-                        pass
+                    p3 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
+                    p3 = self.findObstacle(p3)
+                    if len(p3) > 0:
+                        cx,cy = np.average(p3, axis=0).astype(int)
+                        for x, y in p3:                 
+                            cv2.circle(vis, (x, y), 2, (255, 255, 0), -1)
+                        cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
+                        cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
+                        try:
+                            self.sendCoord(cx)
+                        except rospy.ROSInterruptException:
+                            pass
                     draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
 
             if self.notDetected > 0:
@@ -173,15 +162,15 @@ class App:
                     cv2.circle(mask, (x, y), 5, 0, -1)
                 p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
                 # print(len(p))
-                #p = self.orb.detect(frame_gray, mask=mask)
+                #p = self.fast.detect(frame_gray, mask=mask)
                 #p = [kp.pt for kp in p]
                 print("reaching")
                 if p is not None:
                     p = np.float32(p).reshape(-1,2)
                     #p = self.findObstacle(p)
                     if p is not None:
-                        if self.notDetected > 20:
-                            self.tracks = []
+                        #if self.notDetected > 3:
+                            #self.tracks = []
                         for x, y in p:
                             print("adding")
                             self.tracks.append([(x, y)])
