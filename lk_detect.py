@@ -137,17 +137,18 @@ class App:
                         cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
                     self.tracks = new_tracks
                     p3 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
-                    p3 = self.findObstacle(p3)
                     if len(p3) > 0:
-                        cx,cy = np.average(p3, axis=0).astype(int)
-                        for x, y in p3:                 
-                            cv2.circle(vis, (x, y), 2, (255, 255, 0), -1)
-                        cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
-                        cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
-                        try:
-                            self.sendCoord(cx)
-                        except rospy.ROSInterruptException:
-                            pass
+                        p3 = self.findObstacle(p3)
+                        if len(p3)>0:
+                            cx,cy = np.average(p3, axis=0).astype(int)
+                            for x, y in p3:                 
+                                cv2.circle(vis, (x, y), 2, (255, 255, 0), -1)
+                            cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
+                            cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
+                            try:
+                                self.sendCoord(cx)
+                            except rospy.ROSInterruptException:
+                                pass
                     draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
 
             if self.notDetected > 0:
