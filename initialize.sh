@@ -23,7 +23,7 @@ then
 		export LD_LIBRARY_PATH=.
 		sudo modprobe uvcvideo
 		v4l2-ctl -c focus_auto=0
-        v4l2-ctl -c sharpness = 180
+                v4l2-ctl -c sharpness = 180
 		./lk_detect.py 
 	else
 		usage
@@ -32,9 +32,10 @@ then
 else
 	sudo service lightdm stop
 	export LD_LIBRARY_PATH=.
+	export ROS_MASTER_URI=ROS_PC
 	sudo modprobe uvcvideo
 	v4l2-ctl -c focus_auto=0
-    v4l2-ctl -c sharpness = 180
+        v4l2-ctl -c sharpness = 180
 	./lk_detect.py 
 	sudo service lightdm start
 fi
