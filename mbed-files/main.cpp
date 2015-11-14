@@ -10,8 +10,6 @@
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
 
-#define NOT_DETECTED -1
-
 float dt = 0.01;
 int pix = 640;
 float V=0;
