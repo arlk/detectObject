@@ -1,3 +1,8 @@
+/**
+    @author Arun Lakshmanan
+    @date 11/14/15
+**/
+
 #include "robot.h"
 #include "los.h"
 #include <cstdlib>

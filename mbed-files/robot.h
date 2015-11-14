@@ -1,3 +1,8 @@
+/**
+    @author Arun Lakshmanan
+    @date 11/14/15
+**/
+
 #ifndef ROBOT_H
 #define ROBOT_H
 

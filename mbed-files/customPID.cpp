@@ -1,3 +1,8 @@
+/**
+    @author Arun Lakshmanan
+    @date 11/14/15
+**/
+
 #include "customPID.h"
 
 PID::PID(float Pgain, float Igain, float Dgain, float Isat, float Csat, float CmdBias, float DeadZone)

@@ -1,3 +1,8 @@
+/**
+    @author Arun Lakshmanan
+    @date 11/14/15
+**/
+
 #ifndef LOS_H
 #define LOS_H
 

@@ -1,3 +1,8 @@
+/**
+    @author Arun Lakshmanan
+    @date 11/14/15
+**/
+
 #include "robot.h"
 
 Robot::Robot(float l, float r, PinName sbtx, int addr, int baud, PinName Ltx, PinName Lrx, PinName Rtx, PinName Rrx, int encdrRes, float kp, float ki, float kd, float Isat, float CSat, float CBias, float DeadZone, float deltaT) : Sb(sbtx, addr, baud), WheelL(kp, ki, kd, Isat, CSat, CBias, DeadZone) , WheelR(kp, ki, kd, Isat, CSat, CBias, DeadZone), EncL(Ltx, Lrx, NC, encdrRes), EncR(Rtx, Rrx, NC, encdrRes) {
