@@ -4,6 +4,13 @@ __pycache__/
 
 # C extensions
 *.so
+*.d
+*.o
+*.bin
+*.disasm
+*.elf
+*.hex
+*.map
 
 # Distribution / packaging
 .Python

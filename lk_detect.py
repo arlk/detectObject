@@ -54,9 +54,9 @@ class App:
         minDistance = self.globalMinDist
         mindiffScore = np.inf 
         prevAvg = np.average(self.prevCluster, axis=0) 
-        print("Nclusters",nclusters)
+        #print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
-            print len(clust)
+            #print len(clust)
             if len(clust)>=8:
                 score = np.linalg.norm(stats.skewtest(clust)[0])
                 var = np.var(clust, axis=0)
@@ -65,9 +65,9 @@ class App:
                 if np.isnan(dist):
                     dist = 0 
                 diffScore = math.fabs(var[0] - var[1])
-                print("hello")
+                #print("hello")
                 if diffScore < mindiffScore:
-                    print(score, diffScore, avg[1])
+                    #print(score, diffScore, avg[1])
                     if score<minScore and avg[1]>self.h/2 and dist<minDistance:
                         DONE = True
                         minScore = score
@@ -77,7 +77,7 @@ class App:
                         break
 
         if DONE == False:
-            print("NOT DETECTED")
+            #print("NOT DETECTED")
             self.globalMinDist += 10
             self.notDetected += 1
             #return self.prevCluster
@@ -87,7 +87,7 @@ class App:
             if self.globalMinDist < 25:
                 self.globalMinDist =25 
             self.notDetected = 0
-            print("FINAL:", mindiffScore, minScore, minDistance)
+            #print("FINAL:", mindiffScore, minScore, minDistance)
             self.prevCluster = clusters[id]
             return clusters[id]
 
@@ -128,7 +128,7 @@ class App:
                     new_tracks = []
                     for tr, (x, y), good_flag in zip(self.tracks, p1.reshape(-1, 2), good):
                         if not good_flag:
-                            print ("OH NO!")
+                            #print ("OH NO!")
                             continue
                         tr.append((x, y))
                         if len(tr) > self.track_len:
@@ -167,7 +167,7 @@ class App:
                 # print(len(p))
                 #p = self.fast.detect(frame_gray, mask=mask)
                 #p = [kp.pt for kp in p]
-                print("reaching")
+                #print("reaching")
                 if p is not None:
                     p = np.float32(p).reshape(-1,2)
                     #p = self.findObstacle(p)
@@ -175,9 +175,9 @@ class App:
                         #if self.notDetected > 3:
                             #self.tracks = []
                         for x, y in p:
-                            print("adding")
+                            #print("adding")
                             self.tracks.append([(x, y)])
-                        print(len(self.tracks))
+                        #print(len(self.tracks))
                         # trackPnts = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
                         # newPnts = self.findObstacle(trackPnts)
                         # print(newPnts)
@@ -189,7 +189,7 @@ class App:
 
             self.frame_idx += 1
             self.prev_gray = frame_gray
-            cv2.imshow('lk_track', vis)
+            # cv2.imshow('lk_track', vis)
 
             ch = 0xFF & cv2.waitKey(1)
             if ch == 27:
