@@ -12,18 +12,15 @@
 
 #define NOT_DETECTED -1
 
-float xCenter = 640;
 float dt = 0.01;
-
-int L = 640;
+int pix = 640;
 float V=0;
 float W=0;
-float servoW=64;
 
 Ticker loop;
 
 void servoCmd(const std_msgs::Int32 &cmd_msg) {
-     L = cmd_msg.data;
+     pix = cmd_msg.data;
 }
 
 void motorCmd(const geometry_msgs::Vector3 &cmd_msg) {
@@ -54,7 +51,7 @@ void PIDLoop() {
     Jim.checkEncoder();
     Jim.Update();
 
-    Logitech.Update(L);
+    Logitech.Update(pix);
 
    }
 
