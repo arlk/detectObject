@@ -22,7 +22,7 @@ void LOS::addCamAngle(int pixel) {
 }        
 
 void LOS::potAngle() {
-    servoAngle = pot.read()*216.517 - 106.897;
+    servoAngle = pot.read()*224.972 - 115.523;
 }
 
 float LOS::getAngle() {

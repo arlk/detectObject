@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+from std_msgs.msg import Float64
 from std_msgs.msg import Int32
 import numpy as np
 import math
@@ -9,6 +10,7 @@ from common import anorm2, draw_str
 from time import clock
 from scipy.cluster import hierarchy
 from scipy import stats
+from scipy.spatial import distance
 
 lk_params = dict( winSize  = (20, 20),
                   maxLevel = 2,
@@ -39,17 +41,21 @@ class App:
         self.notDetected = 0
         self.globalMinDist = 300 
         self.prevCluster = []
+        self.meanDist = 0
+        self.rhoDot = 0
         #self.orb = cv2.ORB(**ORB_params)
         self.fast = cv2.FastFeatureDetector()
         rospy.init_node('odroid', anonymous=True)
         self.xcoordPub = rospy.Publisher('camera_x', Int32, queue_size=10)
+        self.rhodotPub = rospy.Publisher('rho_dot', Float64, queue_size=10)
     
-    def sendCoord(self, x):
+    def sendCoord(self, x, y):
         self.xcoordPub.publish(x)
+        self.rhodotPub.publish(y)
 
     def findBestCluster(self, clusters):
         id = 0 
-        minScore = 4.5 
+        minScore = 4
         DONE = False
         minDistance = self.globalMinDist
         mindiffScore = np.inf 
@@ -66,7 +72,7 @@ class App:
                     dist = 0 
                 diffScore = math.fabs(var[0] - var[1])
                 #print("hello")
-                if score < minscore:
+                if score < minScore:
                     #print(score, diffScore, avg[1])
                     if diffScore<mindiffScore and avg[1]>self.h/2 and dist<minDistance:
                         DONE = True
@@ -74,7 +80,6 @@ class App:
                         mindiffScore = diffScore
                         minDistance = dist
                         id = i
-                        break
 
         if DONE == False:
             #print("NOT DETECTED")
@@ -101,6 +106,12 @@ class App:
             for i in range(1,nclusters+1):
                 cluster.append(points[code==i])
             bestCluster = self.findBestCluster(cluster)
+            prevDist = self.meanDist
+            if len(bestCluster) > 0:
+                distn = distance.pdist(bestCluster)
+                self.meanDist = np.average(distn)
+            #print self.meanDist, self.rhoDot
+            self.rhoDot = (self.meanDist - prevDist)*30
         else:
             bestCluster = []
         return bestCluster 
@@ -146,14 +157,14 @@ class App:
                             cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
                             cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
                             try:
-                                self.sendCoord(cx)
+                                self.sendCoord(cx, self.rhoDot)
                             except rospy.ROSInterruptException:
                                 pass
                     draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
 
             if self.notDetected > 0:
                 try:
-                    self.sendCoord(-1)
+                    self.sendCoord(-1, self.rhoDot)
                 except rospy.ROSInterruptException:
                     pass
 
@@ -164,32 +175,15 @@ class App:
                 for x, y in [np.int32(tr[-1]) for tr in self.tracks]:
                     cv2.circle(mask, (x, y), 5, 0, -1)
                 p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
-                # print(len(p))
-                #p = self.fast.detect(frame_gray, mask=mask)
-                #p = [kp.pt for kp in p]
-                #print("reaching")
                 if p is not None:
                     p = np.float32(p).reshape(-1,2)
-                    #p = self.findObstacle(p)
                     if p is not None:
-                        #if self.notDetected > 3:
-                            #self.tracks = []
                         for x, y in p:
-                            #print("adding")
                             self.tracks.append([(x, y)])
-                        #print(len(self.tracks))
-                        # trackPnts = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
-                        # newPnts = self.findObstacle(trackPnts)
-                        # print(newPnts)
-                        # newTr = []
-                        # for x,y in newPnts:
-                            # newTr.append([(x,y)])
-                        # print(len(newTr))
-                        # self.obstacle = newTr
 
             self.frame_idx += 1
             self.prev_gray = frame_gray
-            # cv2.imshow('lk_track', vis)
+            #cv2.imshow('lk_track', vis)
 
             ch = 0xFF & cv2.waitKey(1)
             if ch == 27:

@@ -16,10 +16,10 @@ int pix = 640;
 float V=0;
 float W=0;
 
-float Kp = 30;
-float Ki = 0.03;
+float Kp = 20;
+float Ki = 0.1;
 float Kd = 0;
-float IntSat = 100;
+float IntSat = 5;
 
 Ticker loop;
 
@@ -38,7 +38,8 @@ void getGains(const geometry_msgs::Vector3 &cmd_msg) {
      IntSat = (float) cmd_msg.z;
 }
 
-ros::NodeHandle nh(p28,p27);
+//ros::NodeHandle nh(p28,p27);
+ros::NodeHandle nh(USBTX,USBRX);
 
 ros::Subscriber<std_msgs::Int32> cameraSub("camera_x", servoCmd);
 ros::Subscriber<geometry_msgs::Vector3> PathFollowSub("cmd_vel_w", motorCmd);
@@ -94,7 +95,7 @@ int main() {
     nh.advertise(losPub);
     nh.subscribe(cameraSub);
     nh.subscribe(PathFollowSub);
-    nh.subscribe(RobotGains);
+    //nh.subscribe(RobotGains);
 
     //loop.attach(&PIDLoop, dt);
     while(1) {
