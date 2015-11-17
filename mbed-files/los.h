@@ -10,7 +10,7 @@
 #include "customPID.h"
 #include "Sabertooth.h"
 
-#define NOT_DETECTED -1
+#define NOT_DETECTED 9999 
 
 class LOS {
     public:

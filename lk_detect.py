@@ -50,12 +50,13 @@ class App:
         self.rhodotPub = rospy.Publisher('rho_dot', Float64, queue_size=10)
     
     def sendCoord(self, x, y):
-        self.xcoordPub.publish(x)
+        x -= 640
+	self.xcoordPub.publish(x)
         self.rhodotPub.publish(y)
 
     def findBestCluster(self, clusters):
         id = 0 
-        minScore = 4
+        minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
         mindiffScore = np.inf 
@@ -164,7 +165,7 @@ class App:
 
             if self.notDetected > 0:
                 try:
-                    self.sendCoord(-1, self.rhoDot)
+                    self.sendCoord(9999+640, self.rhoDot)
                 except rospy.ROSInterruptException:
                     pass
 
