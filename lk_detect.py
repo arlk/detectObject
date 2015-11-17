@@ -59,7 +59,7 @@ class App:
         minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
-        mindiffScore = np.inf 
+        mindiffScore = 4444 
         prevAvg = np.average(self.prevCluster, axis=0) 
         #print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
@@ -108,9 +108,9 @@ class App:
                 cluster.append(points[code==i])
             bestCluster = self.findBestCluster(cluster)
             prevDist = self.meanDist
-            if len(bestCluster) > 0:
-                distn = distance.pdist(bestCluster)
-                self.meanDist = np.average(distn)
+            #if len(bestCluster) > 0:
+                #distn = distance.pdist(bestCluster)
+                #self.meanDist = np.average(distn)
             #print self.meanDist, self.rhoDot
             self.rhoDot = (self.meanDist - prevDist)*30
         else:
