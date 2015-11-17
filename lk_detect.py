@@ -118,78 +118,82 @@ class App:
             bestCluster = []
         return bestCluster 
 
+    def loop(self):
+        ret, frame = self.cam.read()
+        self.h,w,_ = frame.shape
+        self.h = int((1-0.5)*self.h)
+        frame = frame[self.h:,:,:]
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        vis = frame.copy()
+
+        if len(self.tracks) > 0:
+            img0, img1 = self.prev_gray, frame_gray
+            p0 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
+            #p0 = self.findObstacle(p0)
+            if len(p0) > 0:
+                self.tracks = [[(x,y)] for x,y in p0]
+                p0 = p0.reshape(-1,1,2)
+                p1, st, err = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
+                p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
+                d = abs(p0-p0r).reshape(-1, 2).max(-1)
+                good = d < 1
+                new_tracks = []
+                for tr, (x, y), good_flag in zip(self.tracks, p1.reshape(-1, 2), good):
+                    if not good_flag:
+                        #print ("OH NO!")
+                        continue
+                    tr.append((x, y))
+                    if len(tr) > self.track_len:
+                        del tr[0]
+                    new_tracks.append(tr)
+                    #cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
+                self.tracks = new_tracks
+                p3 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
+                if len(p3) > 0:
+                    p3 = self.findObstacle(p3)
+                    if len(p3)>0:
+                        cx,cy = np.average(p3, axis=0).astype(int)
+                        for x, y in p3:                 
+                            cv2.circle(vis, (x, y), 2, (255, 255, 0), -1)
+                        #cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
+                        #cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
+                        try:
+                            self.sendCoord(cx, self.rhoDot)
+                        except rospy.ROSInterruptException:
+                            pass
+                #draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
+
+        if self.notDetected > 0:
+            try:
+                self.sendCoord(9999+640, self.rhoDot)
+            except rospy.ROSInterruptException:
+                pass
+
+            
+        if self.frame_idx % self.detect_interval == 0:
+            mask = np.zeros_like(frame_gray)
+            mask[:] = 255
+            for x, y in [np.int32(tr[-1]) for tr in self.tracks]:
+                cv2.circle(mask, (x, y), 5, 0, -1)
+            p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
+            if p is not None:
+                p = np.float32(p).reshape(-1,2)
+                if p is not None:
+                    for x, y in p:
+                        self.tracks.append([(x, y)])
+
+        self.frame_idx += 1
+        self.prev_gray = frame_gray
+        #cv2.imshow('lk_track', vis)
+
+
+
     def run(self):
         while True:
-            ret, frame = self.cam.read()
-            self.h,w,_ = frame.shape
-            self.h = int((1-0.5)*self.h)
-            frame = frame[self.h:,:,:]
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            vis = frame.copy()
-
-            if len(self.tracks) > 0:
-                img0, img1 = self.prev_gray, frame_gray
-                p0 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
-                #p0 = self.findObstacle(p0)
-                if len(p0) > 0:
-                    self.tracks = [[(x,y)] for x,y in p0]
-                    p0 = p0.reshape(-1,1,2)
-                    p1, st, err = cv2.calcOpticalFlowPyrLK(img0, img1, p0, None, **lk_params)
-                    p0r, st, err = cv2.calcOpticalFlowPyrLK(img1, img0, p1, None, **lk_params)
-                    d = abs(p0-p0r).reshape(-1, 2).max(-1)
-                    good = d < 1
-                    new_tracks = []
-                    for tr, (x, y), good_flag in zip(self.tracks, p1.reshape(-1, 2), good):
-                        if not good_flag:
-                            #print ("OH NO!")
-                            continue
-                        tr.append((x, y))
-                        if len(tr) > self.track_len:
-                            del tr[0]
-                        new_tracks.append(tr)
-                        cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
-                    self.tracks = new_tracks
-                    p3 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
-                    if len(p3) > 0:
-                        p3 = self.findObstacle(p3)
-                        if len(p3)>0:
-                            cx,cy = np.average(p3, axis=0).astype(int)
-                            for x, y in p3:                 
-                                cv2.circle(vis, (x, y), 2, (255, 255, 0), -1)
-                            cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
-                            cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
-                            try:
-                                self.sendCoord(cx, self.rhoDot)
-                            except rospy.ROSInterruptException:
-                                pass
-                    draw_str(vis, (20, 20), 'track count: %d' % len(self.tracks))
-
-            if self.notDetected > 0:
-                try:
-                    self.sendCoord(9999+640, self.rhoDot)
-                except rospy.ROSInterruptException:
-                    pass
-
-                
-            if self.frame_idx % self.detect_interval == 0:
-                mask = np.zeros_like(frame_gray)
-                mask[:] = 255
-                for x, y in [np.int32(tr[-1]) for tr in self.tracks]:
-                    cv2.circle(mask, (x, y), 5, 0, -1)
-                p = cv2.goodFeaturesToTrack(frame_gray, mask = mask, **feature_params)
-                if p is not None:
-                    p = np.float32(p).reshape(-1,2)
-                    if p is not None:
-                        for x, y in p:
-                            self.tracks.append([(x, y)])
-
-            self.frame_idx += 1
-            self.prev_gray = frame_gray
-            cv2.imshow('lk_track', vis)
-
-            ch = 0xFF & cv2.waitKey(1)
-            if ch == 27:
-                break
+           self.loop()
+            #ch = 0xFF & cv2.waitKey(1)
+            #if ch == 27:
+                #break
 
 def main():
     import sys
