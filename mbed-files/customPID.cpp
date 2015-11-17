@@ -40,6 +40,27 @@ void PID::PIDUpdate(float currValue, float reference)
     prevError = error; 
 }
 
+void PID::PIDUpdate2(float currValue, float reference)
+{
+    float error;
+    
+    error = - reference + currValue;
+    intError += error;
+    intError = saturate(intError, intSat);
+    dError = error - prevError;
+
+    if (limiting(error, deadzone)) {
+        cmd = kp*error + ki*intError + kd*dError;
+        cmd = saturate(cmd, cmdSat);
+    }
+    else {
+        cmd = 0;
+    }
+
+    cmd += bias;
+    prevError = error; 
+}
+
 float PID::saturate(float value, float boundary) {
     if (value < -boundary) {
         return -boundary;
