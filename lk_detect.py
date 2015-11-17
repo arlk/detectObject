@@ -29,14 +29,14 @@ ORB_params = dict( nfeatures = 500,
 class App:
     def __init__(self, video_src):
         self.track_len = 10
-        self.detect_interval = 5 
+        self.detect_interval = 1 
         self.h = 0
         self.tracks = []
         self.obstacle = []
         self.cam = video.create_capture(video_src)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 854)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 30)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 24)
         self.frame_idx = 0
         self.notDetected = 0
         self.globalMinDist = 300 
@@ -50,7 +50,9 @@ class App:
         self.rhodotPub = rospy.Publisher('rho_dot', Float64, queue_size=10)
     
     def sendCoord(self, x, y):
-        x -= 640
+        if (x!=9999):
+		x -= 640
+		x *= 1
 	self.xcoordPub.publish(x)
         self.rhodotPub.publish(y)
 
@@ -59,7 +61,7 @@ class App:
         minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
-        mindiffScore = 4444 
+        mindiffScore = 20 
         prevAvg = np.average(self.prevCluster, axis=0) 
         #print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
@@ -165,7 +167,7 @@ class App:
 
             if self.notDetected > 0:
                 try:
-                    self.sendCoord(9999+640, self.rhoDot)
+                    self.sendCoord(9999, self.rhoDot)
                 except rospy.ROSInterruptException:
                     pass
 
@@ -184,7 +186,7 @@ class App:
 
             self.frame_idx += 1
             self.prev_gray = frame_gray
-            cv2.imshow('lk_track', vis)
+            #cv2.imshow('lk_track', vis)
 
             ch = 0xFF & cv2.waitKey(1)
             if ch == 27:
@@ -198,8 +200,12 @@ def main():
         video_src = 0
 
     print(__doc__)
-    App(video_src).run()
-    cv2.destroyAllWindows()
+    try:
+    	App(video_src).run()
+    except:
+	pass
+
+    #cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
