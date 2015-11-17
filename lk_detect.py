@@ -29,19 +29,20 @@ ORB_params = dict( nfeatures = 500,
 class App:
     def __init__(self, video_src):
         self.track_len = 10
-        self.detect_interval = 5 
+        self.detect_interval = 10 
         self.h = 0
         self.tracks = []
         self.obstacle = []
         self.cam = video.create_capture(video_src)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 854)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
         self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 30)
         self.frame_idx = 0
         self.notDetected = 0
         self.globalMinDist = 300 
         self.prevCluster = []
         self.meanDist = 0
+        self.prevDist = 0
         self.rhoDot = 0
         #self.orb = cv2.ORB(**ORB_params)
         self.fast = cv2.FastFeatureDetector()
@@ -51,7 +52,7 @@ class App:
     
     def sendCoord(self, x, y):
         x -= 640
-	self.xcoordPub.publish(x)
+        self.xcoordPub.publish(x)
         self.rhodotPub.publish(y)
 
     def findBestCluster(self, clusters):
@@ -66,13 +67,16 @@ class App:
             #print len(clust)
             if len(clust)>=8:
                 score = np.linalg.norm(stats.skewtest(clust)[0])
-                var = np.var(clust, axis=0)
+                #var = np.var(clust, axis=0)
                 avg = np.average(clust, axis=0)
                 dist = np.linalg.norm(prevAvg - avg)
                 if np.isnan(dist):
                     dist = 0 
-                diffScore = math.fabs(var[0] - var[1])
-                #print("hello")
+                #diffScore = math.fabs(var[0] - var[1])
+                
+                distn = distance.pdist(clust)
+                self.meanDist = np.average(distn)
+                diffScore = self.meanDist
                 if score < minScore:
                     #print(score, diffScore, avg[1])
                     if diffScore<mindiffScore and avg[1]>self.h/2 and dist<minDistance:
@@ -107,12 +111,9 @@ class App:
             for i in range(1,nclusters+1):
                 cluster.append(points[code==i])
             bestCluster = self.findBestCluster(cluster)
-            prevDist = self.meanDist
-            #if len(bestCluster) > 0:
-                #distn = distance.pdist(bestCluster)
-                #self.meanDist = np.average(distn)
-            #print self.meanDist, self.rhoDot
-            self.rhoDot = (self.meanDist - prevDist)*30
+            
+            self.rhoDot = (self.meanDist - self.prevDist)*30
+            self.prevDist = self.meanDist
         else:
             bestCluster = []
         return bestCluster 
@@ -121,8 +122,8 @@ class App:
         while True:
             ret, frame = self.cam.read()
             self.h,w,_ = frame.shape
-            #h = int((1-0.65)*h)
-            #frame = frame[h:,:,:]
+            self.h = int((1-0.5)*self.h)
+            frame = frame[self.h:,:,:]
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             vis = frame.copy()
 
