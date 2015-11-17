@@ -30,6 +30,7 @@ class App:
     def __init__(self, video_src):
         self.track_len = 10
         self.detect_interval = 10 
+        self.detect_interval = 1 
         self.h = 0
         self.tracks = []
         self.obstacle = []
@@ -51,8 +52,10 @@ class App:
         self.rhodotPub = rospy.Publisher('rho_dot', Float64, queue_size=10)
     
     def sendCoord(self, x, y):
-        x -= 640
-        self.xcoordPub.publish(x)
+        if (x!=9999):
+		x -= 640
+		x *= 1
+	self.xcoordPub.publish(x)
         self.rhodotPub.publish(y)
 
     def findBestCluster(self, clusters):
@@ -60,7 +63,7 @@ class App:
         minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
-        mindiffScore = 4444 
+        mindiffScore = 20 
         prevAvg = np.average(self.prevCluster, axis=0) 
         #print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
@@ -195,6 +198,7 @@ class App:
             #if ch == 27:
                 #break
 
+
 def main():
     import sys
     try:
@@ -203,8 +207,12 @@ def main():
         video_src = 0
 
     print(__doc__)
-    App(video_src).run()
-    cv2.destroyAllWindows()
+    try:
+    	App(video_src).run()
+    except:
+	pass
+
+    #cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
