@@ -34,8 +34,8 @@ class App:
         self.tracks = []
         self.obstacle = []
         self.cam = video.create_capture(video_src)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 854)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
         self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 30)
         self.frame_idx = 0
         self.notDetected = 0
@@ -184,7 +184,7 @@ class App:
 
             self.frame_idx += 1
             self.prev_gray = frame_gray
-            #cv2.imshow('lk_track', vis)
+            cv2.imshow('lk_track', vis)
 
             ch = 0xFF & cv2.waitKey(1)
             if ch == 27:

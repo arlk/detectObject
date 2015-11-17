@@ -8,7 +8,7 @@
 LOS::LOS(float center, float fieldOfView, float deltaT, PinName pin, float kp, float ki, float kd, float ISat, float CSat, float CBias, float DZone, PinName sbtx, int addr, int baud) : pot(pin), Servo(kp, ki, kd, ISat, CSat, CBias, DZone), Sb(sbtx, addr, baud) {
             xCenter = center;
             FOV = fieldOfView;
-            kpixel = tan(FOV/2*M_PI/180)/xCenter;
+            kpixel = tan(FOV/2*M_PI/180)/640;
             dt = deltaT;
             angle = 0;
             prevAngle = angle;
@@ -41,7 +41,7 @@ void LOS::Update(int pixel) {
     }
     else {
         addCamAngle(pixel);
-        Servo.PIDUpdate(pixel, xCenter);
+        Servo.PIDUpdate2(pixel, xCenter);
         servoCmd = Servo.getCmdValue();
         calcAngleDot();
     }

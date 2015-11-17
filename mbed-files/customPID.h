@@ -10,6 +10,7 @@ class PID {
     public:
         float cmd;
         void PIDUpdate(float currValue, float reference);
+        void PIDUpdate2(float currValue, float reference);
         float saturate(float value, float boundary);
         float limiting(float value, float boundary);
         float getCmdValue();

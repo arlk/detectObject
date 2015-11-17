@@ -11,7 +11,7 @@
 #include <geometry_msgs/Vector3.h>
 
 float dt = 0.01;
-int pix = 640;
+int pix = 9999;
 
 float V=0;
 float W=0;
@@ -38,8 +38,8 @@ void getGains(const geometry_msgs::Vector3 &cmd_msg) {
      IntSat = (float) cmd_msg.z;
 }
 
-//ros::NodeHandle nh(p28,p27);
-ros::NodeHandle nh(USBTX,USBRX);
+ros::NodeHandle nh(p28,p27);
+//ros::NodeHandle nh(USBTX,USBRX);
 
 ros::Subscriber<std_msgs::Int32> cameraSub("camera_x", servoCmd);
 ros::Subscriber<geometry_msgs::Vector3> PathFollowSub("cmd_vel_w", motorCmd);
@@ -56,7 +56,7 @@ QEI EncdrR(p23, p24, NC, 624);
 Robot Jim(0.28, 0.03, p13, 129, 9600, 20000, 30.0, 0.003, 0, 5000, 120, 0, 0.01, dt); 
 
 //xCenter, FOV, interrupt rate, pinName, PID Params, pwm tx, addr, baud
-LOS Logitech(640, 70.42, dt, p20, 0.05, 0.0001, 0.00001, 2000, 5, 64, 0, p9, 129, 9600);
+LOS Logitech(0, 70.42, dt, p20, 0.05, 0.0001, 0.00001, 2000, 5, 64, 0, p9, 129, 9600);
 
 
 void PIDLoop() {
