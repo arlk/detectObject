@@ -5,7 +5,7 @@
 
 #include "robot.h"
 
-Robot::Robot(float l, float r, PinName sbtx, int addr, int baud, PinName Ltx, PinName Lrx, PinName Rtx, PinName Rrx, int encdrRes, float kp, float ki, float kd, float Isat, float CSat, float CBias, float DeadZone, float deltaT) : Sb(sbtx, addr, baud), WheelL(kp, ki, kd, Isat, CSat, CBias, DeadZone) , WheelR(kp, ki, kd, Isat, CSat, CBias, DeadZone), EncL(Ltx, Lrx, NC, encdrRes), EncR(Rtx, Rrx, NC, encdrRes) {
+Robot::Robot(float l, float r, PinName sbtx, int addr, int baud, int encdrRes, float kp, float ki, float kd, float Isat, float CSat, float CBias, float DeadZone, float deltaT) : Sb(sbtx, addr, baud), WheelL(kp, ki, kd, Isat, CSat, CBias, DeadZone) , WheelR(kp, ki, kd, Isat, CSat, CBias, DeadZone) {
     V = 0;
     W = 0;
     L = l;
@@ -18,14 +18,11 @@ Robot::Robot(float l, float r, PinName sbtx, int addr, int baud, PinName Ltx, Pi
 } 
 
 void Robot::checkVelocityDesired(float v, float w) {
-    wDesiredR = ((2*V-W*L)/(4*R*M_PI));
-    wDesiredL = ((2*V-W*L)/(4*R*M_PI));
+    wDesiredR = ((2*v-w*L)/(4*R*M_PI));
+    wDesiredL = ((2*v+w*L)/(4*R*M_PI));
 }
 
-void Robot::checkEncoder() {
-    int angL, angR;
-    angL = EncL.getPulses();
-    angR = EncR.getPulses();
+void Robot::checkEncoder(int angL, int angR) {
     wL = (float) (angL - prevAngL)/(encoderRes*dt);
     wR = (float) (angR - prevAngR)/(encoderRes*dt);
     prevAngL = angL;
@@ -38,6 +35,14 @@ void Robot::Update() {
 }
 
 void Robot::CommandVel() {
-    Sb.SetSpeedMotorA((int)WheelR.getCmdValue());
-    Sb.SetSpeedMotorB((int)WheelL.getCmdValue());
+    Sb.SetSpeedMotorA(WheelL.getCmdValue());
+    Sb.SetSpeedMotorB(WheelR.getCmdValue());
+}
+
+void Robot::setGains(float kp, float ki, float intSat) {
+    WheelL.setGains(kp, ki, intSat);
+    WheelR.setGains(kp, ki, intSat);
+}
+float Robot::getcmd() {
+    return WheelL.getCmdValue();
 }

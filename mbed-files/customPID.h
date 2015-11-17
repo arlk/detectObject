@@ -14,6 +14,8 @@ class PID {
         float limiting(float value, float boundary);
         float getCmdValue();
 	float getBiasValue();        
+    float geterr();
+    void setGains(float Pgain, float Igain, float Isat);
 	PID(float Pgain, float Igain, float Dgain, float Isat, float Csat, float CmdBias, float DeadZone);
 
     private:

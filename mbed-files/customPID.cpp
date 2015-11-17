@@ -16,6 +16,7 @@ PID::PID(float Pgain, float Igain, float Dgain, float Isat, float Csat, float Cm
     deadzone = DeadZone;
     intError = 0;
     prevError = 0;
+    cmd = CmdBias;
 }
 
 void PID::PIDUpdate(float currValue, float reference)
@@ -66,4 +67,14 @@ float PID::getCmdValue() {
 
 float PID::getBiasValue() {
     return bias;
+}
+
+float PID::geterr() {
+    return prevError;
+}
+
+void PID::setGains(float Pgain, float Igain, float Isat) {
+    kp = Pgain;
+    ki = Igain;
+    intSat = Isat;
 }
