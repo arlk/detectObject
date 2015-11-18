@@ -22,8 +22,8 @@ then
 	then
 		export LD_LIBRARY_PATH=.
 		sudo modprobe uvcvideo
-		v4l2-ctl -c focus_auto=0
-        v4l2-ctl -c sharpness=180
+		v4l2-ctl --device=4 -c focus_auto=0
+        v4l2-ctl --device=4 -c sharpness=180
 	else
 		usage
 		exit 0

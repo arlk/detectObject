@@ -53,8 +53,8 @@ class App:
     
     def sendCoord(self, x, y):
         if (x!=9999):
-		x -= 640
-		x *= 1
+		x -= 320
+		x *= 2
 	self.xcoordPub.publish(x)
         self.rhodotPub.publish(y)
 
@@ -63,7 +63,7 @@ class App:
         minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
-        mindiffScore = np.inf 
+        mindiffScore = len(self.tracks)*1.5 
         prevAvg = np.average(self.prevCluster, axis=0) 
         #print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
@@ -88,7 +88,7 @@ class App:
                         mindiffScore = diffScore
                         minDistance = dist
                         id = i
-
+        print self.meanDist
         if DONE == False:
             #print("NOT DETECTED")
             self.globalMinDist += 10
@@ -108,7 +108,9 @@ class App:
         global nclusters
         Z = hierarchy.linkage(points, method='ward')
         if len(Z) > 0:
-            code = hierarchy.fcluster(Z, 400, criterion = 'distance')#nclusters, criterion='maxclust')
+            print len(self.tracks)
+            trackpnts = len(self.tracks)
+            code = hierarchy.fcluster(Z, trackpnts*4, criterion = 'distance')#nclusters, criterion='maxclust')
             nclusters = np.max(code)
             cluster = [] 
             for i in range(1,nclusters+1):
@@ -168,7 +170,7 @@ class App:
 
         if self.notDetected > 0:
             try:
-                self.sendCoord(9999+640, self.rhoDot)
+                self.sendCoord(9999, self.rhoDot)
             except rospy.ROSInterruptException:
                 pass
 
@@ -187,16 +189,16 @@ class App:
 
         self.frame_idx += 1
         self.prev_gray = frame_gray
-        #cv2.imshow('lk_track', vis)
+        cv2.imshow('lk_track', vis)
 
 
 
     def run(self):
         while True:
             self.loop()
-            #ch = 0xFF & cv2.waitKey(1)
-            #if ch == 27:
-                #break
+            ch = 0xFF & cv2.waitKey(1)
+            if ch == 27:
+                break
 
 
 def main():
