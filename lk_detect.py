@@ -35,9 +35,9 @@ class App:
         self.tracks = []
         self.obstacle = []
         self.cam = video.create_capture(video_src)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 1280)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 720)
-        self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 30)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 360)
+        self.cam.set(cv2.cv.CV_CAP_PROP_FPS, 15)
         self.frame_idx = 0
         self.notDetected = 0
         self.globalMinDist = 300 
@@ -63,7 +63,7 @@ class App:
         minScore = np.inf 
         DONE = False
         minDistance = self.globalMinDist
-        mindiffScore = 20 
+        mindiffScore = np.inf 
         prevAvg = np.average(self.prevCluster, axis=0) 
         #print("Nclusters",nclusters)
         for i,clust in enumerate(clusters):
@@ -82,7 +82,7 @@ class App:
                 diffScore = self.meanDist
                 if score < minScore:
                     #print(score, diffScore, avg[1])
-                    if diffScore<mindiffScore and avg[1]>self.h/2 and dist<minDistance:
+                    if diffScore<mindiffScore and avg[1]<self.h and dist<minDistance:
                         DONE = True
                         minScore = score
                         mindiffScore = diffScore
@@ -108,7 +108,7 @@ class App:
         global nclusters
         Z = hierarchy.linkage(points, method='ward')
         if len(Z) > 0:
-            code = hierarchy.fcluster(Z, 1000, criterion = 'distance')#nclusters, criterion='maxclust')
+            code = hierarchy.fcluster(Z, 400, criterion = 'distance')#nclusters, criterion='maxclust')
             nclusters = np.max(code)
             cluster = [] 
             for i in range(1,nclusters+1):
@@ -149,7 +149,7 @@ class App:
                     if len(tr) > self.track_len:
                         del tr[0]
                     new_tracks.append(tr)
-                    #cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
+                    cv2.circle(vis, (x, y), 2, (0, 255, 0), -1)
                 self.tracks = new_tracks
                 p3 = np.float32([tr[-1] for tr in self.tracks]).reshape(-1, 2)
                 if len(p3) > 0:
@@ -159,7 +159,7 @@ class App:
                         for x, y in p3:                 
                             cv2.circle(vis, (x, y), 2, (255, 255, 0), -1)
                         #cv2.polylines(vis, [np.int32(tr) for tr in self.tracks], False, (0, 255, 0))
-                        #cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
+                        cv2.circle(vis, (cx, cy), 4, (0,0,255), 2)
                         try:
                             self.sendCoord(cx, self.rhoDot)
                         except rospy.ROSInterruptException:
@@ -193,7 +193,7 @@ class App:
 
     def run(self):
         while True:
-           self.loop()
+            self.loop()
             #ch = 0xFF & cv2.waitKey(1)
             #if ch == 27:
                 #break

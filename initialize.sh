@@ -32,6 +32,6 @@ else
 	sudo service lightdm stop
 	export LD_LIBRARY_PATH=.
 	sudo modprobe uvcvideo
-	v4l2-ctl -c focus_auto=0
-    v4l2-ctl -c sharpness=180
+	v4l2-ctl --device=0 -c focus_auto=0
+    v4l2-ctl --device=0 -c sharpness=230
 fi
